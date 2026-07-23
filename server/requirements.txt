@@ -1,0 +1,20 @@
+fastapi
+uvicorn
+python-multipart
+httpx
+numpy
+pydantic>=2
+# Pin the ML stack. jina-embeddings-v5's remote code (custom_st.py) is written for transformers
+# 4.x; transformers 5.x removed the `config_class` attribute its custom model relies on. Keep
+# pinned so a rebuild can't silently bump a major and break loading. jina-reranker-v3 loads via
+# AutoModel(trust_remote_code=True) under the same transformers.
+transformers==4.57.6
+sentence-transformers==5.5.1
+peft==0.19.1
+einops
+# torch is provided by the base image / installed separately; do not pin here.
+# Binary-document text extraction for the dataroom index (pdf/xlsx/docx). Without these the
+# index silently skips binary docs -> scope_chunks:0 -> no grounding. Pure-python, no system deps.
+pypdf>=4.0
+openpyxl>=3.1
+python-docx>=1.1

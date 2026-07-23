@@ -1,0 +1,8 @@
+out/
+.venv/
+__pycache__/
+*.pyc
+.env
+.cache/
+.dataroom_cache/
+node_modules/

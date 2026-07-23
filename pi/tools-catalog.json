@@ -1,0 +1,45 @@
+{
+  "_comment": "Single source of truth for the external dataroom tools. TWO TIERS: 'high' = task-level, dataroom-aware tools (you say what you want, the tool runs the whole embed/rank pipeline over the dataroom); 'low' = stateless single-model primitives that operate ONLY on data you pass in (no hidden corpus/state). Every tool is a thin wrapper over jina-embeddings-v5-text-small (embed) or jina-reranker-v3 (rerank) in server/dataroom_service.py. param types: s=string, s[]=string[], i?=optional int, n?=optional number, f?=optional float. 'op' is the backend endpoint. 'fixed' merges constant body fields. 'rename' maps an arg name to a different body key. 'group' drives the UI grouping + master toggle.",
+  "tools": [
+    {
+      "name": "search_dataroom", "op": "search", "group": "high", "default": true,
+      "desc": "HIGH-LEVEL retrieval. Find the passages in the dataroom most relevant to a query, by meaning. Embeds the corpus + your query and returns the top-k chunks with their source file and score. This is the one-stop semantic search over the uploaded dataroom - you don't supply documents, it reaches into the dataroom for you. INPUT: {query, k? (default 8), paths? (restrict to these files)}. OUTPUT: top-k {path,chunk,score,text}.",
+      "params": {"query": "s", "k": "i?", "paths": "s[]?"}
+    },
+    {
+      "name": "answer_question", "op": "answer", "group": "high", "default": true,
+      "desc": "HIGH-LEVEL question answering retrieval. Two-stage: dense-retrieve a wide candidate set from the dataroom, then cross-encoder rerank (jina-reranker-v3) to return the few BEST supporting passages for your question. Use this when you have a question and want the strongest evidence with minimal noise. INPUT: {question, k? (final passages, default 5)}. OUTPUT: top-k {path,chunk,score,text} ranked by the reranker.",
+      "params": {"question": "s", "k": "i?"}, "rename": {"question": "query"}
+    },
+    {
+      "name": "embed_texts", "op": "embed", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Embed text string(s) you provide with jina-embeddings-v5-text-small and APPEND the vectors to a jsonl file in your working directory. Stateless: operates only on the texts you pass. Returns {path,count,dim} - NOT the vectors (read them back from the file yourself). L2-normalized (dot == cosine). INPUT: {texts: string[], role?: \"query\"|\"passage\" (default passage), out?: filename (default embeddings.jsonl)}. FILE: one json/line {i,text,role,dim,embedding}.",
+      "params": {"texts": "s[]", "role": "s?", "out": "s?"}
+    },
+    {
+      "name": "rerank", "op": "rerank", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Score caller-supplied documents by relevance to a query with jina-reranker-v3 (cross-encoder). Stateless: you supply the candidates, it does not fetch its own. INPUT: {query, documents: string[], top_n?}. OUTPUT: {results:[{index,score,text}]} sorted by score desc.",
+      "params": {"query": "s", "documents": "s[]", "top_n": "i?"}
+    },
+    {
+      "name": "similarity", "op": "similarity", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Cosine similarity between texts you provide, via embeddings. If the two lists are equal length it returns pairwise similarities; otherwise it returns the full queries x documents matrix. Stateless. INPUT: {a: string[], b: string[]}. OUTPUT: {mode, similarities|matrix}.",
+      "params": {"a": "s[]", "b": "s[]"}
+    },
+    {
+      "name": "classify", "op": "classify", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Zero-shot classify each text into one of your candidate labels by embedding similarity (text -> nearest label). Stateless. INPUT: {texts: string[], labels: string[]}. OUTPUT: {results:[{text,label,score}]}.",
+      "params": {"texts": "s[]", "labels": "s[]"}
+    },
+    {
+      "name": "cluster", "op": "cluster", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Group texts you provide into clusters of semantically similar/near-duplicate items by embedding similarity (greedy threshold). Stateless. INPUT: {texts: string[], threshold? (default 0.82)}. OUTPUT: {n_clusters, clusters:[{id,members,texts}]}.",
+      "params": {"texts": "s[]", "threshold": "n?"}
+    },
+    {
+      "name": "select_diverse", "op": "deduplicate", "group": "low", "default": false,
+      "desc": "LOW-LEVEL primitive. Select the top-k semantically DIVERSE texts (facility-location/greedy over embeddings) - drop near-duplicates, keep a representative spread. Stateless. INPUT: {texts: string[], k?}. OUTPUT: {kept_indices, kept}.",
+      "params": {"texts": "s[]", "k": "i?"}, "rename": {"texts": "strings"}
+    }
+  ]
+}
