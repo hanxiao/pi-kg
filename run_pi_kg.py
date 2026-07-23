@@ -172,7 +172,10 @@ def main():
                     if '"type":"message_update"' in line:
                         continue
                     log.write(line); log.flush()
-                    if '"type":"agent_end"' in line:
+                    # A turn is over when pi finishes the cycle. pi 0.81 emits agent_end on
+                    # normal completion and agent_settled after an abort/compaction-settle; treat
+                    # BOTH as the turn boundary so we always re-nudge and never hang.
+                    if '"type":"agent_end"' in line or '"type":"agent_settled"' in line:
                         ended = True; break
             finally:
                 wd.cancel()
