@@ -18,14 +18,15 @@ DELIVERABLE: one file KG.jsonl in your current working directory (NOT inside dat
    - subject and object are always canonical ENTITIES or short atomic VALUES (a name, date, number+unit, version, score) - never a sentence or clause.
    - predicates are precise snake_case relations, and synonymous relations are unified to one canonical predicate (no two predicates meaning the same thing); avoid vague catch-alls like related_to / affiliated_with.
 
-4. NO DUPLICATE EDGES. After canonicalization, there is at most one edge per (subject, predicate, object); facts asserted by multiple documents are merged into one edge whose source_files lists all of them.
+4. NO DUPLICATE EDGES. There is at most one edge per (subject, predicate, object); facts asserted by multiple documents are merged into one edge whose source_files lists all of them.
 
-5. WELL-CONNECTED. Because the graph will be used to find long multi-hop chains, it must actually connect: a healthy fraction of entities appear in >=2 documents and the largest connected component covers a large share of the nodes. A fragmented graph (mostly singleton nodes) means canonicalization/deduplication was insufficient - keep improving until it is well-connected.
+5. COMPLETE COVERAGE. Every document under dataroom/ is represented: each non-boilerplate source document contributes its facts to KG.jsonl.
 
-Also write KG_STATS.md reporting: total edges, total canonical nodes, number of entities appearing in >=2 documents, number of connected components, and largest-connected-component size. KG.jsonl is the only deliverable that is graded; make sure it exists and meets bars 1-5 before you stop.
+That is the entire specification of "done": valid format, grounded facts, canonical and deduplicated NODES, deduplicated EDGES, full coverage. Note what is NOT a target: we do not ask for any particular graph connectivity, component size, or path length. Graph structure is a POST-HOC consequence, not a goal - if your node and edge deduplication is done well, the graph will naturally connect; if it is fragmented, that is a symptom that deduplication was insufficient, not a metric to optimize directly. Do not try to engineer connectivity; get the dedup right and let structure follow.
 
-CONSTRAINT - context window is only ~56k tokens and YOUR MEMORY IS WIPED between turns (context is compacted). Assume you remember nothing across turns; the files on disk are your only truth. You must handle three things yourself, though HOW you do so is your choice:
-(1) One document at a time. Reading several documents in one turn overflows the window and wastes the turn - read at most one (in slices if large) and append its facts to KG.jsonl before moving on.
-(2) Durable self-tracked progress. Keep a progress file on disk recording, per document, whether it is done or still pending (with a running done/total count). Re-read it at the START of every turn to decide what to do, and update it the moment you finish a document. Never judge what remains from memory.
-(3) An objective, file-checkable completion test. Before you switch from extraction to canonicalization, verify from the files (not memory) that EVERY source document is represented in KG.jsonl and your progress file shows none pending. If any remain, keep extracting.
-Aside from these, how you sequence extraction, deduplication, and verification is up to you - use your embedding tools where they help (they only propose; you decide the final merges). Iterate until all the outcomes above hold.
+Also write KG_STATS.md reporting whatever you find useful (e.g. total edges, canonical nodes, entities in >=2 documents). KG.jsonl is the only deliverable that is graded; make sure it exists and meets bars 1-5 before you stop.
+
+HARD CONSTRAINTS (not procedure - just limits you must respect; how you work within them is entirely yours):
+- Your context window is only ~56k tokens and is compacted/wiped between turns. If you pull too much into context at once you will overflow and lose the turn, and you will not remember across turns what you have already done. It is on you to work within this: pace your reading so you never overflow, and keep whatever durable notes/progress records on disk you need so you can resume correctly after your memory is wiped - decide for yourself what to record, how often to re-read it, when to re-check or re-read a document, and how to confirm from the files (not memory) that coverage is complete before you finish.
+- Use your embedding tools where they help (they only propose candidates; you decide the final merges).
+How you sequence and revisit extraction, deduplication, and verification is entirely up to you. Iterate until all the outcomes above hold.

@@ -70,8 +70,8 @@ STEP 4 - CANONICALIZE PREDICATES. Same method on the predicate set: cluster syno
 
 STEP 5 - MERGE EDGES. After rewriting, collapse edges that are now identical (same subject+predicate+object); union their source_files and keep the best title/description/evidence. Overwrite KG.jsonl with the final canonical edge set (valid JSONL).
 
-STEP 6 - VERIFY CONNECTIVITY. Compute: number of facts, number of canonical nodes, number of entities appearing in >=2 different documents (cross-document connectivity), and the largest connected component size. If many nodes appear only once / the graph is fragmented, your canonicalization was too timid - go back to STEP 3 and catch more variants with the embedding tools. Iterate until the node set is clean and well-connected.
+STEP 6 - VERIFY DEDUP QUALITY. Sanity-check your canonicalization (NOT to optimize graph structure - connectivity is a post-hoc consequence of good dedup, never a target). Scan for residual duplicate NODES (surface variants of the same entity that you left unmerged) and residual duplicate/synonymous PREDICATES, and for any wrong merges you made (distinct entities collapsed). If you find unmerged variants, go back to STEP 3/STEP 4 and fix them; if you find a wrong merge, split it. Repeat until node and edge dedup are clean. Whatever connectivity results from clean dedup is fine - do not engineer it.
 
-STEP 7 - FINALIZE. Ensure KG.jsonl is valid JSONL and canonical. Write KG_STATS.md with the STEP 6 numbers and a one-line note on the largest connected component. KG.jsonl is the ONLY deliverable that counts - make sure it exists and is valid before you stop.
+STEP 7 - FINALIZE. Ensure KG.jsonl is valid JSONL and canonical. Write KG_STATS.md with basic counts (facts, canonical nodes, entities in >=2 docs). KG.jsonl is the ONLY deliverable that counts - make sure it exists and is valid before you stop.
 
 QUALITY BARS: every fact grounded (evidence_span is a verbatim substring of a real dataroom doc); favor specificity (proper nouns, versions, numbers) over generic claims; no obvious duplicate entities left unmerged; no two genuinely different entities wrongly merged.
