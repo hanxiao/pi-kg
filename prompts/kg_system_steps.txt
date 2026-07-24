@@ -29,22 +29,36 @@ NEVER read many whole documents into context at once, and never hold several lar
 - Because you append as you go, your progress is durable and survives context compaction between turns.
 
 =================  STEP-BY-STEP WORKFLOW (follow in order; resume where you left off each turn)  =================
-This is a test-time-compute loop over many turns, and your context is wiped/compacted between turns - so YOU MUST TRACK YOUR OWN PROGRESS IN A STATE FILE ON DISK, never in your head. Do not trust your memory of what you have done; trust the files. Each turn, re-read your state file first, then continue from the first step not yet complete. Announce which step/document you are on.
+This is a test-time-compute loop over many turns, and YOUR MEMORY IS WIPED between turns (context is compacted). Assume you remember NOTHING from previous turns. The files on disk - KG.jsonl and PROGRESS.md - are your ONLY truth. Never decide what to do next from memory; always read the files first.
 
-STATE FILE (PROGRESS.md) - maintain this yourself, it is how you survive context loss:
-  - On the very first turn, create PROGRESS.md in the working directory listing: the current STEP you are on, and a checklist of EVERY document from dataroom/ marked [ ] todo or [x] done.
-  - Every time you finish extracting a document, immediately update its line to [x] and record how many facts you appended.
-  - At the start of EVERY turn, re-read PROGRESS.md (and `ls dataroom/` + `wc -l KG.jsonl`) to see exactly what remains. This is the single source of truth for what is done - do NOT re-extract a [x] document and do NOT skip a [ ] one.
-  - Only when every document line is [x] may you move past STEP 2 into canonicalization; record the STEP transition in PROGRESS.md.
+=== THE PER-TURN RITUAL (do these in order EVERY turn, no exceptions) ===
+1. READ STATE: `cat PROGRESS.md` and `wc -l KG.jsonl`. This tells you exactly what is done and what is next. If PROGRESS.md does not exist yet, this is turn 1 - go create it (see below).
+2. RECONCILE: the top line of PROGRESS.md is a counter `PROGRESS: X/N done`. Verify it: quickly check that the documents marked [DONE] actually have facts in KG.jsonl and that no [TODO] doc already has facts. Fix any mismatch in PROGRESS.md BEFORE doing anything else. (Silent omissions are the main failure - this step catches them.)
+3. DO EXACTLY ONE THING: pick the SINGLE next [TODO] document (mark it [DOING]), extract it, append its facts, mark it [DONE]. ONE document per turn. Do NOT read or extract multiple documents in one turn - that overflows your context and you lose the turn.
+4. UPDATE STATE: update the [DONE] mark and bump the `PROGRESS: X/N` counter by exactly 1. The counter MUST increase by 1 every extraction turn; if it did not, you did something wrong - fix it.
+5. Announce: 'Turn done: extracted <doc> (<k> facts). PROGRESS now X/N.' then stop.
 
-STEP 1 - INVENTORY. `ls dataroom/` (recurse if needed). Write the full document list into PROGRESS.md as a [ ] checklist (see STATE FILE). If KG.jsonl already exists, reconcile: mark documents that already have facts as [x].
+=== PROGRESS.md FORMAT (you create and own this file) ===
+On turn 1, create PROGRESS.md with:
+  - First line: `PROGRESS: 0/N done` (N = number of documents in dataroom/).
+  - Second line: `STEP: 2-EXTRACT`.
+  - Then one line per document from `ls dataroom/`: `[TODO] <filename>`.
+  - A `## Notes for future-you` section for conventions you want to remember.
+Vocabulary: `[TODO]` not started, `[DOING]` in progress this turn (at most ONE at a time), `[DONE] <filename> (<k> facts)` finished. Recovery rule: if you ever see a `[DOING]` at the start of a turn, a previous turn was interrupted mid-document - re-check whether that doc has facts in KG.jsonl and set it to [DONE] or back to [TODO] accordingly.
 
-STEP 2 - EXTRACT (repeat for EVERY document, one at a time, until every PROGRESS.md line is [x]):
-  a. From PROGRESS.md pick the next [ ] document.
-  b. Read it in slices per CONTEXT DISCIPLINE (never dump a whole large file into context).
+=== STOP GATE (objective, file-checkable - do NOT judge from memory) ===
+You may leave STEP 2 (extraction) and begin canonicalization ONLY when BOTH hold, checked against the files this turn: (a) `PROGRESS: N/N done`, and (b) `grep -c '\[TODO\]\|\[DOING\]' PROGRESS.md` returns 0. If either fails, you are still extracting - go back to the ritual. Never start canonicalizing while any document is unextracted.
+
+Work the ritual; announce which step/document you are on.
+
+STEP 1 - INVENTORY (turn 1 only). `ls dataroom/` (recurse if needed) and create PROGRESS.md in the format above, one `[TODO] <filename>` line per document, counter `PROGRESS: 0/N`. If KG.jsonl already exists, reconcile first (mark docs that already have facts [DONE]).
+
+STEP 2 - EXTRACT (the per-turn ritual; ONE document per turn until the STOP GATE opens):
+  a. Follow the ritual: read state, reconcile, pick the SINGLE next [TODO] doc, mark [DOING].
+  b. Read it in slices per CONTEXT DISCIPLINE (never dump a whole large file into context; never open a second document this turn).
   c. Extract atomic (subject,predicate,object) facts following the CANONICAL-NODE RULE. Long/dense docs warrant 8-15 facts; short/generic pages 0-3; skip nav/login/error/boilerplate pages. Ground every fact in a verbatim evidence_span from that document.
   d. APPEND each fact as one JSONL line to KG.jsonl right now (write/edit tool, or bash: printf '%s\n' '<json line>' >> KG.jsonl). Set source_files to [that filename].
-  e. Mark that document [x] in PROGRESS.md with its fact count, then go to the next [ ] document. Do NOT start canonicalizing until every document is [x]. If you are unsure whether extraction is finished, re-read PROGRESS.md - if any line is still [ ], you are still in STEP 2.
+  e. Mark that document [DONE] with its fact count and bump the counter by 1. Stop the turn. Do NOT start canonicalizing until the STOP GATE opens.
 
 STEP 3 - CANONICALIZE ENTITIES (only after every document is extracted). This is where you spend embedding compute:
   a. From KG.jsonl, collect all DISTINCT subject and object strings (bash/jq/python).
