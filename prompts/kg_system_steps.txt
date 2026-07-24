@@ -29,16 +29,22 @@ NEVER read many whole documents into context at once, and never hold several lar
 - Because you append as you go, your progress is durable and survives context compaction between turns.
 
 =================  STEP-BY-STEP WORKFLOW (follow in order; resume where you left off each turn)  =================
-This is a test-time-compute loop over many turns. Each turn, continue from the first step not yet complete. Announce which step/document you are on.
+This is a test-time-compute loop over many turns, and your context is wiped/compacted between turns - so YOU MUST TRACK YOUR OWN PROGRESS IN A STATE FILE ON DISK, never in your head. Do not trust your memory of what you have done; trust the files. Each turn, re-read your state file first, then continue from the first step not yet complete. Announce which step/document you are on.
 
-STEP 1 - INVENTORY. `ls dataroom/` (recurse if needed). Build the list of documents. If KG.jsonl already exists, `wc -l KG.jsonl` and check which source_files are already covered so you do not redo them.
+STATE FILE (PROGRESS.md) - maintain this yourself, it is how you survive context loss:
+  - On the very first turn, create PROGRESS.md in the working directory listing: the current STEP you are on, and a checklist of EVERY document from dataroom/ marked [ ] todo or [x] done.
+  - Every time you finish extracting a document, immediately update its line to [x] and record how many facts you appended.
+  - At the start of EVERY turn, re-read PROGRESS.md (and `ls dataroom/` + `wc -l KG.jsonl`) to see exactly what remains. This is the single source of truth for what is done - do NOT re-extract a [x] document and do NOT skip a [ ] one.
+  - Only when every document line is [x] may you move past STEP 2 into canonicalization; record the STEP transition in PROGRESS.md.
 
-STEP 2 - EXTRACT (repeat for EVERY document, one at a time, until all are covered):
-  a. Pick the next uncovered document.
+STEP 1 - INVENTORY. `ls dataroom/` (recurse if needed). Write the full document list into PROGRESS.md as a [ ] checklist (see STATE FILE). If KG.jsonl already exists, reconcile: mark documents that already have facts as [x].
+
+STEP 2 - EXTRACT (repeat for EVERY document, one at a time, until every PROGRESS.md line is [x]):
+  a. From PROGRESS.md pick the next [ ] document.
   b. Read it in slices per CONTEXT DISCIPLINE (never dump a whole large file into context).
   c. Extract atomic (subject,predicate,object) facts following the CANONICAL-NODE RULE. Long/dense docs warrant 8-15 facts; short/generic pages 0-3; skip nav/login/error/boilerplate pages. Ground every fact in a verbatim evidence_span from that document.
   d. APPEND each fact as one JSONL line to KG.jsonl right now (write/edit tool, or bash: printf '%s\n' '<json line>' >> KG.jsonl). Set source_files to [that filename].
-  e. State how many facts you appended for that document, then go to the next document. Do not start canonicalizing until ALL documents are extracted.
+  e. Mark that document [x] in PROGRESS.md with its fact count, then go to the next [ ] document. Do NOT start canonicalizing until every document is [x]. If you are unsure whether extraction is finished, re-read PROGRESS.md - if any line is still [ ], you are still in STEP 2.
 
 STEP 3 - CANONICALIZE ENTITIES (only after every document is extracted). This is where you spend embedding compute:
   a. From KG.jsonl, collect all DISTINCT subject and object strings (bash/jq/python).

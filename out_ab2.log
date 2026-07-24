@@ -1,0 +1,44 @@
+===== VARIANT steps =====
+[kgbox] dataroom=/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_steps/dataroom (5 files) | budget=10 turns | llama=http://34.74.140.200:8080
+[kgbox] sidecar up on :62119
+[kgbox] turn 1/10 | KG.jsonl lines=61
+[kgbox] turn 2/10 | KG.jsonl lines=126
+[kgbox] turn 3/10 | KG.jsonl lines=126
+[kgbox] turn 4/10 | KG.jsonl lines=130
+[kgbox] turn 5/10 | KG.jsonl lines=130
+[kgbox] turn 6/10 | KG.jsonl lines=130
+[kgbox] turn 7/10 | KG.jsonl lines=130
+[kgbox] turn 8/10 | KG.jsonl lines=130
+[kgbox] turn 9/10 | KG.jsonl lines=130
+[kgbox] turn 10/10 | KG.jsonl lines=130
+
+=== KGBOX RUN DONE ===
+{
+  "turns": 10,
+  "stop_reason": "budget_spent",
+  "kg_lines": 130,
+  "kg_path": "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_steps/KG.jsonl",
+  "kg_stats_md": "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_steps/KG_STATS.md"
+}
+===== VARIANT outcome =====
+[kgbox] dataroom=/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_outcome/dataroom (5 files) | budget=10 turns | llama=http://34.74.140.200:8080
+[kgbox] sidecar up on :62321
+[kgbox] turn 1/10 | KG.jsonl lines=0
+[kgbox] turn 2/10 | KG.jsonl lines=0
+[kgbox] turn 3/10 | KG.jsonl lines=0
+[kgbox] turn 4/10 | KG.jsonl lines=0
+[kgbox] turn 5/10 | KG.jsonl lines=190
+[kgbox] turn 6/10 | KG.jsonl lines=190
+[kgbox] turn 7/10 | KG.jsonl lines=186
+[kgbox] turn 8/10 | KG.jsonl lines=186
+[kgbox] turn 9/10 | KG.jsonl lines=186
+[kgbox] turn 10/10 | KG.jsonl lines=186
+
+=== KGBOX RUN DONE ===
+{
+  "turns": 10,
+  "stop_reason": "budget_spent",
+  "kg_lines": 186,
+  "kg_path": "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_outcome/KG.jsonl",
+  "kg_stats_md": "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_outcome/KG_STATS.md"
+}

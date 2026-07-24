@@ -185,7 +185,9 @@ def main():
             print(f"[kgbox] turn {turn}/{args.budget} | KG.jsonl lines={kg_lines()}", flush=True)
             if turn >= args.budget:
                 break
-            # The one thing we add over vanilla pi: keep it going until the budget is spent.
+            # The ONLY thing we add over vanilla pi: keep nudging until the budget is spent.
+            # No state/coverage bookkeeping in the harness - the agent tracks its own progress
+            # (which docs are done) via a state file it maintains, per its system prompt.
             send({"type": "prompt", "message": "Continue."})
     except Exception as e:
         stop_reason = f"error:{e}"
