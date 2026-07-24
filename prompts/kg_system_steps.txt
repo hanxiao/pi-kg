@@ -16,6 +16,7 @@ subject and object MUST be canonical ENTITIES or short atomic VALUES, never pros
 - Strip articles/roles/qualifiers: "the Jina AI team" -> "Jina AI"; "a model called jina-embeddings-v3" -> "jina-embeddings-v3".
 - Reuse the EXACT same string for the same entity across every fact. This is how nodes merge.
 - Keep genuinely different entities distinct: jina-embeddings-v2 != v3; a base model != its Chinese variant.
+- TYPE DISTINCTION (do NOT merge across these types even when strings look similar): an organization/company (Jina AI), a product/service (Jina Reader), a URL/API endpoint/domain (r.jina.ai, api.jina.ai), a model (jina-embeddings-v3), a paper, and a person are ALL different node types and must stay separate nodes. Example of a WRONG merge to avoid: r.jina.ai (an endpoint) -> Jina AI (a company). A service's endpoint/URL is its own node (or a value), never the company that owns it.
 - Never put a sentence/clause in subject/object. If a value is descriptive, make object the atomic value and explain in description.
 - Prefer entity-entity edges (they make the graph rich); entity-value edges are fine too.
 PREDICATES: pick the MOST precise snake_case relation; coin new ones freely; AVOID vague catch-alls (related_to, affiliated_with). Style examples only (not a menu): built_by, based_on, trained_on, released_on, outperforms, evaluated_on, scored, integrates_with, acquired_by, authored_by, cites, successor_of, has_context_length, has_dimension.
@@ -41,8 +42,8 @@ STEP 2 - EXTRACT (repeat for EVERY document, one at a time, until all are covere
 
 STEP 3 - CANONICALIZE ENTITIES (only after every document is extracted). This is where you spend embedding compute:
   a. From KG.jsonl, collect all DISTINCT subject and object strings (bash/jq/python).
-  b. Use your embedding tools to PROPOSE merges: embed the strings (embed_texts) and cluster near-duplicates (cluster; use similarity to inspect). Embeddings give recall.
-  c. YOU decide precision: within each proposed cluster, merge ONLY surface forms that are truly the same real-world entity, choose ONE canonical name, and keep distinct entities separate (do not merge v2 with v3, base with a language variant, etc.).
+  b. Use your embedding tools to PROPOSE merges: embed the strings (embed_texts) and cluster near-duplicates (cluster; use similarity to inspect). Embeddings give recall (they catch candidates) but they OVER-propose: strings sharing tokens (r.jina.ai vs Jina AI) cluster together despite being different entities. Never accept a merge on embedding similarity alone.
+  c. YOU decide precision using SIDE INFORMATION, not just the string. For each candidate merge, look at how each surface string is USED in KG.jsonl - its predicates and neighbors (its context). Two strings are the same entity only if their predicate/neighbor context is consistent with being the same real-world thing. Example: r.jina.ai appears with predicate api_endpoint while Jina AI appears with has_model/released_by - different context => different entities, DO NOT merge. Merge ONLY surface forms that are truly the same entity; SPLIT a proposed cluster into multiple canonical entities when it mixes types (endpoint vs company vs product vs model). Keep distinct entities separate (v2 != v3, base != language variant, endpoint != company).
   d. Produce an entity map {surface -> canonical} and apply it: rewrite every fact's subject/object to canonical form.
 
 STEP 4 - CANONICALIZE PREDICATES. Same method on the predicate set: cluster synonymous relations, decide merges yourself, map each to one canonical snake_case predicate, rewrite.

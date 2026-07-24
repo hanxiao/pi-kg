@@ -1,8 +1,22 @@
 ===== VARIANT steps =====
 [kgbox] dataroom=/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_steps/dataroom (5 files) | budget=10 turns | llama=http://34.80.58.36:8080
-[kgbox] sidecar up on :52616
-[kgbox] turn 1/10 | KG.jsonl lines=52
-scripts/run_ab.sh: line 10: 38910 Terminated: 15          PROMPT_VARIANT=$V $PY run_pi_kg.py --dataroom "$DR" --budget "$BUDGET" --out "out/ab_$V"
+[kgbox] sidecar up on :53109
+[kgbox] turn 1/10 | KG.jsonl lines=55
+[kgbox] turn 2/10 | KG.jsonl lines=84
+[kgbox] turn 3/10 | KG.jsonl lines=84
+scripts/run_ab.sh: line 10: 39638 Terminated: 15          PROMPT_VARIANT=$V $PY run_pi_kg.py --dataroom "$DR" --budget "$BUDGET" --out "out/ab_$V"
 ===== VARIANT outcome =====
 [kgbox] dataroom=/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_outcome/dataroom (5 files) | budget=10 turns | llama=http://34.80.58.36:8080
-[kgbox] sidecar up on :53102
+[kgbox] sidecar up on :53274
+[kgbox] turn 1/10 | KG.jsonl lines=0
+[kgbox] turn 2/10 | KG.jsonl lines=0
+scripts/run_ab.sh: line 10: 39826 Terminated: 15          PROMPT_VARIANT=$V $PY run_pi_kg.py --dataroom "$DR" --budget "$BUDGET" --out "out/ab_$V"
+kgbox] turn 9/10 | KG.jsonl lines=0
+[kgbox] turn 10/10 | KG.jsonl lines=0
+Traceback (most recent call last):
+  File "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/run_pi_kg.py", line 210, in <module>
+    main()
+  File "/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/run_pi_kg.py", line 205, in main
+    json.dump(stats, open(job_dir / "run_meta.json", "w"), indent=2)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/hanxiao/.openclaw/workspace/experiments/pi-kg/out/ab_outcome/run_meta.json'

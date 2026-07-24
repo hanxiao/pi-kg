@@ -14,7 +14,7 @@ DELIVERABLE: one file KG.jsonl in your current working directory (NOT inside dat
 
 3. CANONICAL, DEDUPLICATED NODES (the property that matters most). The same real-world entity must be ONE node - one identical string - everywhere it appears, across all documents. The final graph must have:
    - NO duplicate entities: surface variants of the same thing ("the Jina AI team", "Jina AI", "Jina") collapse to a single canonical node; "jina-embeddings-v3" and "a model called jina-embeddings-v3" are the same node.
-   - NO wrong merges: genuinely different entities stay distinct (jina-embeddings-v2 != v3; a base model != its Chinese variant; different versions/dates/values are different nodes).
+   - NO wrong merges: genuinely different entities stay distinct (jina-embeddings-v2 != v3; a base model != its Chinese variant; different versions/dates/values are different nodes). Different TYPES never merge even when strings overlap: an organization (Jina AI), a product/service (Jina Reader), a URL/API endpoint/domain (r.jina.ai), a model, a paper, and a person are all separate nodes. A concrete WRONG merge to avoid: r.jina.ai (endpoint) -> Jina AI (company). Embedding similarity OVER-proposes such merges; decide using each string's usage context (its predicates/neighbors), not the raw string - matching context means same entity, differing context (api_endpoint vs has_model) means keep separate.
    - subject and object are always canonical ENTITIES or short atomic VALUES (a name, date, number+unit, version, score) - never a sentence or clause.
    - predicates are precise snake_case relations, and synonymous relations are unified to one canonical predicate (no two predicates meaning the same thing); avoid vague catch-alls like related_to / affiliated_with.
 
